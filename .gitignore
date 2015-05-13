@@ -1,5 +1,6 @@
 # Private CSV with transaction data
 export.csv
+cleaned.csv
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
