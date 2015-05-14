@@ -7,6 +7,24 @@ CREATE TABLE cc_owner (
   name person NOT NULL -- the name of the person owning the credit card
 );
 
+INSERT INTO cc_owner (cc, name) VALUES
+  ('KMAN', 'Kaiting Chen'),
+  ('MELA', 'Melanie Plageman'),
+  ('1737', 'Kaiting Chen'),
+  ('0564', 'Kaiting Chen'),
+  ('6532', 'Kaiting Chen'),
+  ('1835', 'Kaiting Chen'),
+  ('0244', 'Kaiting Chen'),
+  ('4386', 'Kaiting Chen'),
+  ('1922', 'Kaiting Chen'),
+  ('8598', 'Kaiting Chen'),
+  ('1003', 'Kaiting Chen'),
+  ('1008', 'Kaiting Chen'),
+  ('0093', 'Kaiting Chen'),
+  ('1004', 'Melanie Plageman'),
+  ('8349', 'Melanie Plageman'),
+  ('3791', 'Melanie Plageman');
+
 -- data per transaction
 CREATE TABLE transactions (
   amount DECIMAL(8, 2) NOT NULL, -- dollar (or other currency) amount of each transaction
