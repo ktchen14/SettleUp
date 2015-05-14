@@ -65,8 +65,15 @@ for line in mycsv:
         pass
     else:
         raise ValueError('Batch rejected due to no payer label or cc number')
+
+conn = psycopg2.connect(
+        host='ec2-107-22-187-89.compute-1.amazonaws.com',
+        database='dbtrl58pa0ipp6',
+        user='rpvalfmhbpbsml')
+cursor = conn.cursor()
+
 for line in mycsv:
-    Transaction(
+    t = Transaction(
         merchant_name = cleanse_merchant_name(line),
         cc = cleanse_cc(line),
         amount = cleanse_amount(line),
@@ -74,11 +81,10 @@ for line in mycsv:
         owner = cleanse_owner(line),
         transaction_date = cleanse_transaction_date(line)
     )
+    cursor.execute(
+        'INSERT INTO transactions (merchant_name, cc, amount, remote_id, owner, transaction_date) VALUES (%s, %s, %s, %s, %s, %s);',
+        (t.merchant_name, t.cc, t.amount, t.remote_id, t.owner, t.transaction_date)
+    )
 
-conn = psycopg2.connect(
-        host='ec2-107-22-187-89.compute-1.amazonaws.com',
-        database='dbtrl58pa0ipp6',
-        user='rpvalfmhbpbsml')
-cursor = conn.cursor()
-cursor.execute('SELECT * FROM cc_owner;')
-print cursor.fetchall()
+conn.commit()
+conn.close()
