@@ -3,6 +3,7 @@ import csv
 from decimal import Decimal
 from datetime import datetime
 import re
+import psycopg2
 
 card = re.compile(r'Card \(([0-9]{4})\)')
 
@@ -65,7 +66,7 @@ for line in mycsv:
     else:
         raise ValueError('Batch rejected due to no payer label or cc number')
 for line in mycsv:
-    print Transaction(
+    Transaction(
         merchant_name = cleanse_merchant_name(line),
         cc = cleanse_cc(line),
         amount = cleanse_amount(line),
@@ -73,3 +74,11 @@ for line in mycsv:
         owner = cleanse_owner(line),
         transaction_date = cleanse_transaction_date(line)
     )
+
+conn = psycopg2.connect(
+        host='ec2-107-22-187-89.compute-1.amazonaws.com',
+        database='dbtrl58pa0ipp6',
+        user='rpvalfmhbpbsml')
+cursor = conn.cursor()
+cursor.execute('SELECT * FROM cc_owner;')
+print cursor.fetchall()
