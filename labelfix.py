@@ -17,7 +17,7 @@ def cleanse_merchant_name(record):
 def cleanse_cc(record):
     if card.match(record['Payment Type']):
         mo = card.match(record['Payment Type'])
-        record['Payment Type'] = mo.group(1)
+        return mo.group(1)
     elif 'By Melanie' in record['Categories']:
         return 'MELA'
     elif 'By Kaiting' in record['Categories']:
