@@ -1,9 +1,14 @@
+import collections
 import csv
 from decimal import Decimal
 from datetime import datetime
 import re
 
 card = re.compile(r'Card \(([0-9]{4})\)')
+
+Transaction = collections.namedtuple('Transaction', [
+    'amount', 'merchant_name', 'cc', 'owner', 'remote_id', 'transaction_date'
+])
 
 def cleanse_amount(record):
     return Decimal(record['Total (USD)'])
@@ -60,9 +65,11 @@ for line in mycsv:
     else:
         raise ValueError('Batch rejected due to no payer label or cc number')
 for line in mycsv:
-    cleanse_merchant_name(line)
-    cleanse_cc(line)
-    cleanse_amount(line)
-    cleanse_remote_id(line)
-    cleanse_owner(line)
-    cleanse_transaction_date(line)
+    print Transaction(
+        merchant_name = cleanse_merchant_name(line),
+        cc = cleanse_cc(line),
+        amount = cleanse_amount(line),
+        remote_id = cleanse_remote_id(line),
+        owner = cleanse_owner(line),
+        transaction_date = cleanse_transaction_date(line)
+    )
