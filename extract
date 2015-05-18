@@ -1,8 +1,21 @@
 #! /usr/local/bin/python
 
+import argparse
 import collections
 import itertools
 import unicodecsv
+
+desc = 'Extract the transaction section of a Shoeboxed CSV export.'
+ap = argparse.ArgumentParser(description=desc)
+
+# desc = 'The source CSV file. If omitted will read from STDIN.'
+desc = 'The source CSV file.'
+ap.add_argument('source_csv', metavar='FILE', help=desc)
+
+# to be done later
+# desc = 'The output CSV file. If omitted will write to STDOUT.'
+
+args = ap.parse_args()
 
 # assume that the transaction section header is a record having at least:
 #   Date, Store, Total (USD), Payment Type, Categories, Link
@@ -16,7 +29,7 @@ def is_transaction_prefix(record):
 def is_transaction_suffix(record):
     return len([f for f in record if f]) == 0
 
-with open('export.csv', 'r') as f:
+with open(args.source_csv, 'r') as f:
     with open('cleaned.csv', 'w') as w:
         reader = itertools.takewhile(lambda x: not is_transaction_suffix(x),
                  itertools.dropwhile(lambda x: not is_transaction_prefix(x),
