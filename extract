@@ -2,7 +2,11 @@
 
 import argparse
 import collections
+from datetime import datetime
+from decimal import Decimal
 import itertools
+import psycopg2
+import re
 import unicodecsv
 
 desc = 'Extract the transaction section of a Shoeboxed CSV export.'
@@ -41,6 +45,68 @@ class ShoeboxedCSVReader(object):
 
     def __iter__(self): return iter(self.reader)
 
+# compile regex for credit card
+card = re.compile(r'Card \(([0-9]{4})\)')
+
+# create named tuple which is all of the target fields
+Transaction = collections.namedtuple('Transaction', [
+    'amount', 'merchant_name', 'cc', 'owner', 'remote_id', 'transaction_date'
+])
+
+def record_to_transaction(record):
+    if not record['Total (USD)']:
+        raise ValueError('No transaction amount recorded')
+
+    if not record['Link']:
+        raise ValueError('No pdf link recorded')
+
+    if not record['Store']:
+        merchant_name = None
+    else:
+        merchant_name = record['Store']
+
+    if not record['Date']:
+        transaction_date = None
+    else:
+        transaction_date = datetime.strptime(record['Date'], '%b %d, %Y').date()
+
+    amount = Decimal(record['Total (USD)'])
+
+    # remote_id is the last path component of Link
+    remote_id = record['Link'].split('/')[-1]
+
+    if card.match(record['Payment Type']):
+        mo = card.match(record['Payment Type'])
+        cc = mo.group(1)
+    elif 'By Melanie' in record['Categories']:
+        cc = 'MELA'
+    elif 'By Kaiting' in record['Categories']:
+        cc = 'KMAN'
+    else:
+        raise ValueError('Batch rejected due to no payer label or cc number')
+
+    # Review later
+    # One and exactly one of:
+    #   For Both of Us, For Melanie, For Kaiting
+    # must be in Categories
+    if 'For Both of Us' in record['Categories']:
+        owner = None
+    elif 'For Melanie' in record['Categories']:
+        owner = 'Melanie Plageman'
+    elif 'For Kaiting' in record['Categories']:
+        owner = 'Kaiting Chen'
+    else:
+        raise ValueError('Data Steward made a mistake')
+
+    return Transaction(
+        merchant_name = merchant_name,
+        cc = cc,
+        amount = amount,
+        remote_id = remote_id,
+        owner = owner,
+        transaction_date = transaction_date
+    )
+
 with open(args.source_csv, 'r') as f:
     reader = ShoeboxedCSVReader(f)
 
@@ -50,3 +116,6 @@ with open(args.source_csv, 'r') as f:
         record['Categories'] = record['Categories'].split(', ')
 
     relcsv = [ record for record in rawcsv if 'NYC' not in record['Categories'] ]
+
+    for record in relcsv:
+        print record_to_transaction(record)
