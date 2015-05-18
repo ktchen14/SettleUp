@@ -31,14 +31,16 @@ def is_transaction_suffix(record):
     return len([f for f in record if f]) == 0
 
 with open(args.source_csv, 'r') as f:
-    with open('cleaned.csv', 'w') as w:
-        reader = itertools.takewhile(lambda x: not is_transaction_suffix(x),
-                 itertools.dropwhile(lambda x: not is_transaction_prefix(x),
-                 unicodecsv.reader(f)))
+    reader = itertools.takewhile(lambda x: not is_transaction_suffix(x),
+             itertools.dropwhile(lambda x: not is_transaction_prefix(x),
+             unicodecsv.reader(f)))
 
-        # we want to fail here if no records match is_transaction_prefix
-        header = reader.next()
+    # we want to fail here if no records match is_transaction_prefix
+    header = reader.next()
 
-        writer = unicodecsv.writer(w)
-        writer.writerow(header)
-        writer.writerows(reader)
+    rawcsv = [ dict(zip(header, record)) for record in reader ]
+
+    for record in rawcsv:
+        record['Categories'] = record['Categories'].split(', ')
+
+    relcsv = [ record for record in rawcsv if 'NYC' not in record['Categories'] ]
