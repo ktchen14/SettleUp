@@ -49,56 +49,41 @@ Transaction = collections.namedtuple('Transaction', [
     'amount', 'merchant_name', 'cc', 'owner', 'remote_id', 'transaction_date'
 ])
 
+def check_label(labels):
+    categories = set(record['Categories'])
+    intersection = categories.intersection(labels)
+    if len(intersection) == 1: return tuple(intersection)[0]
+    else: raise ValueError('Incorrect labels')
+
 def record_to_transaction(record):
-    if not record['Total (USD)']:
-        raise ValueError('No transaction amount recorded')
-
-    if not record['Link']:
-        raise ValueError('No pdf link recorded')
-
-    if not record['Store']:
-        merchant_name = None
-    else:
-        merchant_name = record['Store']
+    for field in ['Total (USD)', 'Link']:
+        if not record[field]: raise ValueError('Missing required value')
 
     if not record['Date']:
         transaction_date = None
     else:
         transaction_date = datetime.strptime(record['Date'], '%b %d, %Y').date()
 
-    amount = Decimal(record['Total (USD)'])
-
-    # remote_id is the last path component of Link
-    remote_id = record['Link'].split('/')[-1]
-
-    if card.match(record['Payment Type']):
-        mo = card.match(record['Payment Type'])
-        cc = mo.group(1)
-    elif 'By Melanie' in record['Categories']:
-        cc = 'MELA'
-    elif 'By Kaiting' in record['Categories']:
-        cc = 'KMAN'
+    result = card.match(record['Payment Type'])
+    if result:
+        cc = result.group(1)
     else:
-        raise ValueError('Batch rejected due to no payer label or cc number')
+        payer_labels = {'By Melanie', 'By Kaiting'}
+        payer = check_label(payer_labels)
+        if payer == 'By Melanie': cc = 'MELA'
+        else: cc = 'KMAN'
 
-    # Review later
-    # One and exactly one of:
-    #   For Both of Us, For Melanie, For Kaiting
-    # must be in Categories
-    if 'For Both of Us' in record['Categories']:
-        owner = None
-    elif 'For Melanie' in record['Categories']:
-        owner = 'Melanie Plageman'
-    elif 'For Kaiting' in record['Categories']:
-        owner = 'Kaiting Chen'
-    else:
-        raise ValueError('Data Steward made a mistake')
+    owner_map = { 'For Both of Us': None,
+      'For Melanie': 'Melanie Plageman',
+      'For Kaiting': 'Kaiting Chen' }
+    owner = owner_map[check_label(set(owner_map.keys()))]
 
     return Transaction(
-        merchant_name = merchant_name,
+        merchant_name = record['Store'] or None,
         cc = cc,
-        amount = amount,
-        remote_id = remote_id,
+        amount = Decimal(record['Total (USD)']),
+        # remote_id is the last path component of Link
+        remote_id = record['Link'].split('/')[-1],
         owner = owner,
         transaction_date = transaction_date
     )
@@ -113,5 +98,17 @@ with open(args.source_csv, 'r') as f:
 
     relcsv = [ record for record in rawcsv if 'NYC' not in record['Categories'] ]
 
+    conn = psycopg2.connect(
+            host='ec2-107-22-187-89.compute-1.amazonaws.com',
+            database='dbtrl58pa0ipp6',
+            user='rpvalfmhbpbsml')
+    cursor = conn.cursor()
+
     for record in relcsv:
-        print record_to_transaction(record)
+        cursor.execute(
+            'INSERT INTO transactions (merchant_name, cc, amount, remote_id, owner, transaction_date) VALUES (%s, %s, %s, %s, %s, %s);',
+            (t.merchant_name, t.cc, t.amount, t.remote_id, t.owner, t.transaction_date)
+        )
+
+    conn.commit()
+    conn.close()
