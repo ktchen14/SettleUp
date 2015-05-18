@@ -1,5 +1,5 @@
 -- reset the database by dropping and recreating the public schema
-DROP SCHEMA IF NOT EXISTS public CASCADE; CREATE SCHEMA public;
+DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public;
 
 -- enumeration representing the two people tracked by SettleUp
 CREATE TYPE person AS ENUM ('Kaiting Chen', 'Melanie Plageman');
