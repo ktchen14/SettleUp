@@ -7,6 +7,7 @@ import unicodecsv
 
 desc = 'Extract the transaction section of a Shoeboxed CSV export.'
 ap = argparse.ArgumentParser(description=desc)
+ap.add_argument('--version', action='version', version='SettleUp 0.1')
 
 # desc = 'The source CSV file. If omitted will read from STDIN.'
 desc = 'The source CSV file.'
