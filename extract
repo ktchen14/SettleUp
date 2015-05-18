@@ -13,12 +13,8 @@ desc = 'Extract the transaction section of a Shoeboxed CSV export.'
 ap = argparse.ArgumentParser(description=desc)
 ap.add_argument('--version', action='version', version='SettleUp 0.1')
 
-# desc = 'The source CSV file. If omitted will read from STDIN.'
-desc = 'The source CSV file.'
+desc = 'The source CSV file. If omitted will read from STDIN.'
 ap.add_argument('source_csv', metavar='FILE', help=desc)
-
-# to be done later
-# desc = 'The output CSV file. If omitted will write to STDOUT.'
 
 args = ap.parse_args()
 
