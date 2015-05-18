@@ -1,3 +1,6 @@
+DROP SCHEMA public CASCADE;
+CREATE SCHEMA public;
+
 --enumerated type person with two possible values
 CREATE TYPE person AS ENUM ('Kaiting Chen', 'Melanie Plageman');
 
