@@ -5,14 +5,29 @@ from datetime import datetime
 import re
 import psycopg2
 
+# compile regex to match credit card field
 card = re.compile(r'Card \(([0-9]{4})\)')
 
+# create named tuple which is all of the target fields
 Transaction = collections.namedtuple('Transaction', [
     'amount', 'merchant_name', 'cc', 'owner', 'remote_id', 'transaction_date'
 ])
 
+mycsv = []
+with open('cleaned.csv') as f:
+    reader = csv.DictReader(f)
+    for record in reader:
+        # for the string value of the Categories field, create a list of strings split at commas
+        record['Categories'] = record['Categories'].split(', ')
+        # only add the records that don't include NYC in the list of Categories
+        if 'NYC' not in record['Categories']:
+            mycsv.append(record)
+
 def cleanse_amount(record):
-    return Decimal(record['Total (USD)'])
+    if not record['Total (USD)']:
+        raise ValueError('No transaction amount recorded')
+    else:
+        return Decimal(record['Total (USD)'])
 
 def cleanse_merchant_name(record):
     if not record['Store']:
@@ -20,6 +35,7 @@ def cleanse_merchant_name(record):
     else:
         return record['Store']
 
+# for the value of the Payment Type field, if it is not either a cc number or a payer label, then raise an error                
 def cleanse_cc(record):
     if card.match(record['Payment Type']):
         mo = card.match(record['Payment Type'])
@@ -28,43 +44,31 @@ def cleanse_cc(record):
         return 'MELA'
     elif 'By Kaiting' in record['Categories']:
         return 'KMAN'
-
+    else:
+        raise ValueError('Batch rejected due to no payer label or cc number')
+        
 def cleanse_remote_id(record):
-    return record['Link'].split('/')[-1]
+    if not record['Link']:
+        raise ValueError('No pdf link recorded')
+    else:
+        return record['Link'].split('/')[-1]
 
+# get owner labels from Categories and throw error if no owner label
 def cleanse_owner(record):
-    for label in record['Categories']:
-        if label == 'For Melanie':
-            return 'Melanie Plageman'
-        elif label == 'For Kaiting':
-            return 'Kaiting Chen'
-        elif label == 'For Both of Us':
-            return None
+    if 'For Melanie' in record['Categories']:
+        return 'Melanie Plageman'
+    elif 'For Kaiting' in record['Categories']:
+        return 'Kaiting Chen'
+    elif 'For Both of Us' in record['Categories']:
+        return None
+    else:
+        raise ValueError('Data Steward made a mistake')
 
 def cleanse_transaction_date(record):
     if not record['Date']:
         return None
     else:
         return datetime.strptime(record['Date'], '%b %d, %Y').date()
-
-mycsv = []
-with open('cleaned.csv') as f:
-    reader = csv.DictReader(f)
-    for row in reader:
-        row['Categories'] = row['Categories'].split(', ')
-        if 'NYC' not in row['Categories']:
-            if 'For Both of Us' in row['Categories'] or 'For Kaiting' in row['Categories'] or 'For Melanie' in row['Categories']:
-                mycsv.append(row)
-            else:
-                raise ValueError('Data Steward made a mistake')
-                
-for line in mycsv:
-    if card.match(line['Payment Type']):
-        mo = card.match(line['Payment Type'])
-    elif 'By Melanie' in line['Categories'] or 'By Kaiting' in line['Categories']:
-        pass
-    else:
-        raise ValueError('Batch rejected due to no payer label or cc number')
 
 conn = psycopg2.connect(
         host='ec2-107-22-187-89.compute-1.amazonaws.com',
