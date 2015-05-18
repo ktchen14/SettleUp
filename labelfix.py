@@ -13,16 +13,6 @@ Transaction = collections.namedtuple('Transaction', [
     'amount', 'merchant_name', 'cc', 'owner', 'remote_id', 'transaction_date'
 ])
 
-mycsv = []
-with open('cleaned.csv') as f:
-    reader = csv.DictReader(f)
-    for record in reader:
-        # for the string value of the Categories field, create a list of strings split at commas
-        record['Categories'] = record['Categories'].split(', ')
-        # only add the records that don't include NYC in the list of Categories
-        if 'NYC' not in record['Categories']:
-            mycsv.append(record)
-
 def cleanse_amount(record):
     if not record['Total (USD)']:
         raise ValueError('No transaction amount recorded')
