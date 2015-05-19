@@ -22,5 +22,9 @@ class TestReaderFunctions(unittest.TestCase):
         with self.assertRaises(StopIteration):
             next(iter(self.example_reader))
 
+    def test_is_transaction_suffix(self):
+        row = ['', '', '', '', '']
+        self.assertTrue(reader.ShoeboxedCSVReader.is_transaction_suffix(row))
+
 if __name__ == '__main__':
     unittest.main()
