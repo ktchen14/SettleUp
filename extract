@@ -105,6 +105,7 @@ with open(args.source_csv, 'r') as f:
     cursor = conn.cursor()
 
     for record in relcsv:
+        t = record_to_transaction(record)
         cursor.execute(
             'INSERT INTO transactions (merchant_name, cc, amount, remote_id, owner, transaction_date) VALUES (%s, %s, %s, %s, %s, %s);',
             (t.merchant_name, t.cc, t.amount, t.remote_id, t.owner, t.transaction_date)
