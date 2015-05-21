@@ -30,7 +30,7 @@ INSERT INTO cc_owner (cc, name) VALUES
   ('8349', 'Melanie Plageman'),
   ('3791', 'Melanie Plageman');
 
-CREATE TABLE transactions (
+CREATE TABLE transaction (
   amount DECIMAL(8, 2) NOT NULL, -- in USD
   merchant_name VARCHAR(255),
   cc CHAR(4) NOT NULL REFERENCES cc_owner, -- last 4 digits of credit card used
@@ -40,3 +40,35 @@ CREATE TABLE transactions (
   owner person,
   transaction_date DATE
 );
+
+CREATE OR REPLACE FUNCTION transaction_upsert(
+  amount DECIMAL,
+  merchant_name VARCHAR,
+  cc CHAR,
+  remote_id VARCHAR,
+  owner person,
+  transaction_date DATE)
+RETURNS VOID AS $$
+DECLARE
+  result transaction;
+
+BEGIN
+  SELECT * INTO result FROM transaction WHERE transaction_upsert.remote_id = transaction.remote_id;
+  IF FOUND THEN
+    UPDATE transaction SET
+      amount = transaction_upsert.amount,
+      merchant_name = transaction_upsert.merchant_name,
+      cc = transaction_upsert.cc,
+      owner = transaction_upsert.owner,
+      transaction_date = transaction_upsert.transaction_date
+    WHERE transaction_upsert.remote_id = transaction.remote_id;
+  ELSE
+    INSERT INTO transaction (amount, merchant_name, cc, owner, transaction_date, remote_id) VALUES (
+      transaction_upsert.amount,
+      transaction_upsert.merchant_name,
+      transaction_upsert.cc,
+      transaction_upsert.owner,
+      transaction_upsert.transaction_date,
+      transaction_upsert.remote_id);
+  END IF;
+END; $$ LANGUAGE plpgsql;
