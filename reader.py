@@ -29,5 +29,13 @@ class ShoeboxedCSVReader(object):
         # we want to fail here if no records match is_transaction_prefix
         self.header = next(self.reader)
 
-    def __iter__(self): return iter(self.reader)
+    def __iter__(self):
+        return self
 
+    def next(self):
+        for record in self.reader:
+            record = dict(zip(self.header, record))
+            record['Categories'] = record['Categories'].split(', ')
+            if 'NYC' not in record['Categories']:
+                return record
+        raise StopIteration

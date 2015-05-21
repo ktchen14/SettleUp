@@ -17,20 +17,13 @@ args = ap.parse_args()
 with open(args.source_csv, 'r') as f:
     reader = ShoeboxedCSVReader(f)
 
-    rawcsv = [ dict(zip(reader.header, record)) for record in reader ]
-
-    for record in rawcsv:
-        record['Categories'] = record['Categories'].split(', ')
-
-    relcsv = [ record for record in rawcsv if 'NYC' not in record['Categories'] ]
-
     conn = psycopg2.connect(
             host='ec2-107-22-187-89.compute-1.amazonaws.com',
             database='dbtrl58pa0ipp6',
             user='rpvalfmhbpbsml')
     cursor = conn.cursor()
 
-    for record in relcsv:
+    for record in reader:
         t = record_to_transaction(record)
         cursor.execute('''SELECT transaction_upsert(
             merchant_name := %s,
