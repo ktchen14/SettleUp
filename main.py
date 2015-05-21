@@ -32,10 +32,14 @@ with open(args.source_csv, 'r') as f:
 
     for record in relcsv:
         t = record_to_transaction(record)
-        cursor.execute(
-            'INSERT INTO transactions (merchant_name, cc, amount, remote_id, owner, transaction_date) VALUES (%s, %s, %s, %s, %s, %s);',
-            (t.merchant_name, t.cc, t.amount, t.remote_id, t.owner, t.transaction_date)
-        )
+        cursor.execute('''SELECT transaction_upsert(
+            merchant_name := %s,
+            cc := %s,
+            amount := %s,
+            remote_id := %s,
+            owner := %s,
+            transaction_date := %s
+        );''', (t.merchant_name, t.cc, t.amount, t.remote_id, t.owner, t.transaction_date))
 
     conn.commit()
     conn.close()
