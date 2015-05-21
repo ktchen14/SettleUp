@@ -31,6 +31,7 @@ kaiting_total = 0
 melanie_total = 0
 with xlsxwriter.Workbook('transactions.xlsx') as workbook:
     worksheet = workbook.add_worksheet()
+    date_format = workbook.add_format({'num_format': 'mmmm d yyyy'})
     headers = ['Remote ID', 'Amount', 'Merchant Name', 'Transaction Date',
             'Payer', 'Owner', 'Kaiting is Owed', 'Melanie is Owed' ]
 
@@ -45,7 +46,7 @@ with xlsxwriter.Workbook('transactions.xlsx') as workbook:
         worksheet.write(row, 0, record.remote_id)
         worksheet.write(row, 1, record.amount)
         worksheet.write(row, 2, record.merchant_name)
-        worksheet.write(row, 3, record.transaction_date)
+        worksheet.write_datetime(row, 3, record.transaction_date, date_format)
         worksheet.write(row, 4, record.name)
         worksheet.write(row, 5, record.owner)
         worksheet.write(row, 6, kaiting_balance)
