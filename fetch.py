@@ -1,4 +1,5 @@
 import psycopg2, psycopg2.extras
+import xlsxwriter
 
 conn = psycopg2.connect(
         host='ec2-107-22-187-89.compute-1.amazonaws.com',
@@ -28,9 +29,30 @@ def get_transaction_balance(record):
 cursor.execute('SELECT * FROM transactions INNER JOIN cc_owner USING (cc);')
 kaiting_total = 0
 melanie_total = 0
-for record in cursor:
-    kaiting_balance, melanie_balance = get_transaction_balance(record)
-    kaiting_total += kaiting_balance
-    melanie_total += melanie_balance
+with xlsxwriter.Workbook('transactions.xlsx') as workbook:
+    worksheet = workbook.add_worksheet()
+    headers = ['Remote ID', 'Amount', 'Merchant Name', 'Transaction Date',
+            'Payer', 'Owner', 'Kaiting is Owed', 'Melanie is Owed' ]
+
+    for col, header in enumerate(headers):
+        worksheet.write(0, col, header)
+
+    for row, record in enumerate(cursor, 1):
+        kaiting_balance, melanie_balance = get_transaction_balance(record)
+        kaiting_total += kaiting_balance
+        melanie_total += melanie_balance
+
+        worksheet.write(row, 0, record.remote_id)
+        worksheet.write(row, 1, record.amount)
+        worksheet.write(row, 2, record.merchant_name)
+        worksheet.write(row, 3, record.transaction_date)
+        worksheet.write(row, 4, record.name)
+        worksheet.write(row, 5, record.owner)
+        worksheet.write(row, 6, kaiting_balance)
+        worksheet.write(row, 7, melanie_balance)
+
+    worksheet.write(row + 1, 0, 'Total')
+    worksheet.write(row + 1, 6, kaiting_total)
+    worksheet.write(row + 1, 7, melanie_total)
 
 print 'Kaiting balance is %s ; Melanie balance is %s' % (kaiting_total, melanie_total)
