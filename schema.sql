@@ -72,3 +72,43 @@ BEGIN
       transaction_upsert.remote_id);
   END IF;
 END; $$ LANGUAGE plpgsql;
+
+
+CREATE OR REPLACE FUNCTION get_transaction_balance(t transaction,
+  OUT kb DECIMAL(8, 2),
+  OUT mb DECIMAL(8, 2)) AS $$
+DECLARE
+  payer person;
+
+BEGIN
+  SELECT name INTO payer FROM cc_owner WHERE cc = t.cc;
+  IF t.owner = 'Kaiting Chen' AND payer = 'Melanie Plageman' THEN
+    kb = -t.amount;
+    mb = t.amount;
+  ELSIF t.owner = 'Melanie Plageman' AND payer = 'Kaiting Chen' THEN
+    kb = t.amount;
+    mb = -t.amount;
+  ELSIF t.owner IS NULL AND payer = 'Kaiting Chen' THEN
+    kb = t.amount/2;
+    mb = -t.amount/2;
+  ELSIF t.owner IS NULL AND payer = 'Melanie Plageman' THEN
+    kb = -t.amount/2;
+    mb = t.amount/2;
+  ELSE
+    kb = 0;
+    mb = 0;
+  END IF;
+
+END; $$ LANGUAGE plpgsql;
+
+CREATE VIEW transaction_with_rollbalance AS
+  SELECT *,
+    (SUM((get_transaction_balance(transaction)).kb) OVER (ORDER BY transaction.transaction_date ASC))::DECIMAL(8,2) AS kb_rolling,
+    (SUM((get_transaction_balance(transaction)).mb) OVER (ORDER BY transaction.transaction_date ASC))::DECIMAL(8,2) AS mb_rolling
+    FROM transaction;
+
+CREATE VIEW transaction_with_balance AS
+  SELECT *,
+    (get_transaction_balance(transaction)).kb::DECIMAL(8,2),
+    (get_transaction_balance(transaction)).mb::DECIMAL(8,2)
+    FROM transaction;
