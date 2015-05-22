@@ -3,7 +3,6 @@
 import argparse
 from reader import ShoeboxedCSVReader
 import psycopg2
-from cs import record_to_transaction
 
 desc = 'Extract the transaction section of a Shoeboxed CSV export.'
 ap = argparse.ArgumentParser(description=desc)
@@ -23,8 +22,7 @@ with open(args.source_csv, 'r') as f:
             user='rpvalfmhbpbsml')
     cursor = conn.cursor()
 
-    for record in reader:
-        t = record_to_transaction(record)
+    for t in reader:
         cursor.execute('''SELECT transaction_upsert(
             merchant_name := %s,
             cc := %s,
