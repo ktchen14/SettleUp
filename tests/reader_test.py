@@ -132,6 +132,11 @@ class TestReaderFunctions(unittest.TestCase):
         with self.assertRaises(Exception):
             ShoeboxedCSVReader.cs_date(self.test_record)
 
+    def test_check_label(self):
+        labels = {'His', 'Hers'}
+        labelslist = ['His', 'Theirs']
+        self.assertEqual(ShoeboxedCSVReader.check_label(labels, labelslist), 'His')
+
     # the test file has a single transaction record
     def test_is_iterable(self):
         # first iteration should work
