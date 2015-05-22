@@ -32,13 +32,13 @@ INSERT INTO cc_owner (cc, name) VALUES
 
 CREATE TABLE transaction (
   amount DECIMAL(8, 2) NOT NULL, -- in USD
-  merchant_name VARCHAR(255),
+  merchant_name VARCHAR(255) NOT NULL,
   cc CHAR(4) NOT NULL REFERENCES cc_owner, -- last 4 digits of credit card used
   -- unique id of the transaction (currently derived from the pdf url)
   remote_id VARCHAR(255) PRIMARY KEY,
   -- person who owes the amount of the transaction
   owner person,
-  transaction_date DATE
+  transaction_date DATE NOT NULL
 );
 
 CREATE OR REPLACE FUNCTION transaction_upsert(

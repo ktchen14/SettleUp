@@ -18,13 +18,10 @@ def check_label(labels, labelslist):
     else: raise ValueError('Incorrect labels')
 
 def record_to_transaction(record):
-    for field in ['Total (USD)', 'Link']:
+    for field in ['Total (USD)', 'Link', 'Date', 'Store']:
         if not record[field]: raise ValueError('Missing required value')
 
-    if not record['Date']:
-        transaction_date = None
-    else:
-        transaction_date = datetime.strptime(record['Date'], '%b %d, %Y').date()
+    transaction_date = datetime.strptime(record['Date'], '%b %d, %Y').date()
 
     result = card.match(record['Payment Type'])
     if result:
@@ -41,7 +38,7 @@ def record_to_transaction(record):
     owner = owner_map[check_label(set(owner_map.keys()), record['Categories'])]
 
     return Transaction(
-        merchant_name = record['Store'] or None,
+        merchant_name = record['Store'],
         cc = cc,
         amount = Decimal(record['Total (USD)']),
         # remote_id is the last path component of Link
