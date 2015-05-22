@@ -1,11 +1,6 @@
 import psycopg2, psycopg2.extras
 import xlsxwriter
-
-conn = psycopg2.connect(
-        host='ec2-107-22-187-89.compute-1.amazonaws.com',
-        database='dbtrl58pa0ipp6',
-        user='rpvalfmhbpbsml')
-cursor = conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor)
+import database
 
 def get_transaction_balance(record):
     if record.owner == 'Kaiting Chen' and record.name == 'Melanie Plageman':
@@ -26,7 +21,6 @@ def get_transaction_balance(record):
 
     return kaiting_balance, melanie_balance
 
-cursor.execute('SELECT * FROM transactions INNER JOIN cc_owner USING (cc);')
 kaiting_total = 0
 melanie_total = 0
 with xlsxwriter.Workbook('transactions.xlsx') as workbook:
@@ -39,7 +33,7 @@ with xlsxwriter.Workbook('transactions.xlsx') as workbook:
     for col, header in enumerate(headers):
         worksheet.write(0, col, header)
 
-    for row, record in enumerate(cursor, 1):
+    for row, record in enumerate(database.fetch_data(), 1):
         kaiting_balance, melanie_balance = get_transaction_balance(record)
         kaiting_total += kaiting_balance
         melanie_total += melanie_balance
