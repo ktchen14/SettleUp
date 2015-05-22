@@ -1,4 +1,4 @@
-from reader import ShoeboxedCSVReader
+from reader import ShoeboxedCSVReader, Transaction
 
 import datetime
 import decimal
@@ -7,11 +7,7 @@ import unittest
 class TestReaderFunctions(unittest.TestCase):
     def setUp(self):
         self.test_record = {'Total (USD)': '14.26', 'Conversion Rate': '1.0000', 'Payment Type': 'Card (0000)', 'Original Total': '14.26', 'Original Currency': 'USD', 'Note': '', 'Link': 'https://app.shoeboxed.com/shared/view/abcdefgh-ijkl-mnop-qrst-uvwxyz012345', 'Categories': 'For Melanie', 'Date': 'Oct 01, 2014', 'Original Tax': '', 'Store': 'Harris Teeter', 'Tax (USD)': ''}
-        self.example_file = open('tests/reader_test.csv')
-        self.example_reader = ShoeboxedCSVReader(self.example_file)
-
-    def tearDown(self):
-        self.example_file.close()
+        self.single_file = 'tests/reader_test.csv'
 
     def test_is_transaction_prefix(self):
         # is_transaction_prefix should return False if any of the fields:
@@ -137,14 +133,18 @@ class TestReaderFunctions(unittest.TestCase):
         labelslist = ['His', 'Theirs']
         self.assertEqual(ShoeboxedCSVReader.check_label(labels, labelslist), 'His')
 
-    # the test file has a single transaction record
     def test_is_iterable(self):
-        # first iteration should work
-        next(iter(self.example_reader))
+        # the single_file is a CSV with a single transaction record
+        with open(self.single_file, 'r') as csv_source:
+            reader = ShoeboxedCSVReader(csv_source)
 
-        # second iteration should stop iteration
-        with self.assertRaises(StopIteration):
-            next(iter(self.example_reader))
+            # the reader object should be iterable
+            for i, t in enumerate(reader):
+                # each iteration should yield a Transaction
+                self.assertIsInstance(t, Transaction)
+
+        # the loop should have performed a single iteration
+        self.assertEqual(i, 0)
 
 if __name__ == '__main__':
     unittest.main()
