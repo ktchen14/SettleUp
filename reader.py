@@ -14,16 +14,17 @@ Transaction = collections.namedtuple('Transaction', [
 card = re.compile(r'Card \(([0-9]{4})\)')
 
 class ShoeboxedCSVReader(object):
+    prefix_mark = {
+        'Date', 'Store', 'Total (USD)', 'Payment Type', 'Categories', 'Link'
+    }
+
     # assume that the transaction section header is a record having at least:
     #   Date, Store, Total (USD), Payment Type, Categories, Link
     # if there is no such record then the export format has changed
     # and we don't have the requisite fields to proceed
     @staticmethod
     def is_transaction_prefix(record):
-        prefix_mark = {
-            'Date', 'Store', 'Total (USD)', 'Payment Type', 'Categories', 'Link'
-        }
-        return set(record).issuperset(prefix_mark)
+        return set(record).issuperset(ShoeboxedCSVReader.prefix_mark)
 
     # the transaction section is followed by a blank record
     @staticmethod
