@@ -4,7 +4,7 @@ import re
 import collections
 from datetime import datetime
 from decimal import Decimal
-    
+
 # create named tuple which is all of the target fields
 Transaction = collections.namedtuple('Transaction', [
     'amount', 'merchant_name', 'cc', 'owner', 'remote_id', 'transaction_date'
@@ -79,7 +79,7 @@ class ShoeboxedCSVReader(object):
             payer = ShoeboxedCSVReader.check_label(payer_labels, record['Categories'])
             if payer == 'By Melanie': return 'MELA'
             else: return 'KMAN'
-    
+
     @staticmethod
     def set_owner(record):
         owner_map = { 'For Both of Us': None,
