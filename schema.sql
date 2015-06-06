@@ -41,6 +41,22 @@ CREATE TABLE transaction (
   transaction_date DATE NOT NULL
 );
 
+CREATE TABLE settlement (
+  id SERIAL PRIMARY KEY,
+  amount DECIMAL(8, 2) NOT NULL, -- in USD
+  sender person NOT NULL,
+  recipient person NOT NULL,
+  settlement_date DATE NOT NULL,
+  CHECK (amount > 0),
+  CHECK (sender != recipient)
+);
+
+INSERT INTO settlement (amount, sender, recipient, settlement_date)
+  VALUES ('100', 'Melanie Plageman', 'Kaiting Chen', NOW());
+
+INSERT INTO settlement (amount, sender, recipient, settlement_date)
+  VALUES ('200', 'Kaiting Chen', 'Melanie Plageman', NOW());
+
 CREATE OR REPLACE FUNCTION transaction_upsert(
   amount DECIMAL,
   merchant_name VARCHAR,
@@ -101,6 +117,21 @@ BEGIN
 
 END; $$ LANGUAGE plpgsql;
 
+CREATE OR REPLACE FUNCTION get_settlement_balance(s settlement,
+  OUT ks DECIMAL(8, 2),
+  OUT ms DECIMAL(8, 2)) AS $$
+
+BEGIN
+  IF s.sender = 'Kaiting Chen' THEN
+    ks = -s.amount;
+    ms = s.amount;
+  ELSIF s.sender = 'Melanie Plageman' THEN
+    ks = s.amount;
+    ms = -s.amount;
+  END IF;
+
+END; $$ LANGUAGE plpgsql;
+
 CREATE VIEW transaction_with_rollbalance AS
   SELECT *,
     (SUM((get_transaction_balance(transaction)).kb) OVER (ORDER BY transaction.transaction_date ASC))::DECIMAL(8,2) AS kb_rolling,
@@ -112,3 +143,18 @@ CREATE VIEW transaction_with_balance AS
     (get_transaction_balance(transaction)).kb::DECIMAL(8,2),
     (get_transaction_balance(transaction)).mb::DECIMAL(8,2)
     FROM transaction;
+
+CREATE VIEW settlement_with_balance AS
+  SELECT *,
+    (get_settlement_balance(settlement)).ks::DECIMAL(8,2),
+    (get_settlement_balance(settlement)).ms::DECIMAL(8,2)
+    FROM settlement;
+
+CREATE VIEW settlement_with_rollbalance AS
+  SELECT *,
+    (SUM((get_settlement_balance(settlement)).ks) OVER (ORDER BY settlement.settlement_date ASC))::DECIMAL(8,2) AS ks_rolling,
+    (SUM((get_settlement_balance(settlement)).ms) OVER (ORDER BY settlement.settlement_date ASC))::DECIMAL(8,2) AS ms_rolling
+    FROM settlement;
+
+CREATE VIEW transaction_plus_settlement AS
+  SELECT amount, kb, mb, transaction_date FROM transaction_with_balance UNION SELECT amount, ks, ms, settlement_date FROM settlement_with_balance;
