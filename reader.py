@@ -63,7 +63,7 @@ class ShoeboxedCSVReader(object):
     @staticmethod
     def check_required_fields(record):
         for field in ['Total (USD)', 'Link', 'Date', 'Store']:
-            if not record[field]: raise ValueError('Missing required value')
+            if not record[field]: raise ValueError('Missing required value "%s"' % field)
 
     @staticmethod
     def cs_date(record):

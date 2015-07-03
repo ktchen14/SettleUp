@@ -27,5 +27,5 @@ def fetch_data():
             database='dbtrl58pa0ipp6',
             user='rpvalfmhbpbsml')
     cursor = conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor)
-    cursor.execute('SELECT * FROM transactions INNER JOIN cc_owner USING (cc);')
+    cursor.execute('SELECT * FROM transaction INNER JOIN cc_owner USING (cc);')
     return cursor
